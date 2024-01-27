@@ -1,0 +1,8 @@
+calibration data
+
+mean
+567.2833
+sd
+6.498971
+confidence interval
+27.96281
