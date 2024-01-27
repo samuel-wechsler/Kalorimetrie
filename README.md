@@ -25,17 +25,12 @@ To run the scripts, clone the repository to your local machine using the followi
 ```bash
 git clone https://github.com/your-username/your-repository.git
 Replace "your-username" and "your-repository" with your GitHub username and the name of the repository, respectively.
-
-Set Up Environment:
-Ensure you have R installed on your machine. You can download it from here.
-Open R or RStudio and set the working directory to the location of the downloaded scripts.
-Run Scripts:
-Run each script in the order mentioned above, starting with calibrations.R.
+```
 
 Note: The scripts may depend on specific data files, so make sure the data files are located in the correct directories or modify the file paths accordingly.
 
 ## Data Files
 The scripts use various data files for calibration, heat capacity experiments, solvation enthalpy experiments, and titration experiments. Ensure these files are present in the appropriate directories or update the file paths in the scripts.
 
-## Results
+## Results
 Upon successful execution, the scripts generate plots and print relevant results, such as heat capacities, specific heat capacities, molar solution enthalpy, and titration information.
