@@ -23,8 +23,7 @@ This GitHub repository contains R scripts for a project focused on experimental 
 To run the scripts, clone the repository to your local machine using the following command:
 
 ```bash
-git clone https://github.com/your-username/your-repository.git
-Replace "your-username" and "your-repository" with your GitHub username and the name of the repository, respectively.
+git clone https://github.com/samuel-wechsler/Kalorimetrie
 ```
 
 Note: The scripts may depend on specific data files, so make sure the data files are located in the correct directories or modify the file paths accordingly.
