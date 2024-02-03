@@ -21,8 +21,8 @@ c2 <- titration_concentration(V2, 1, 25)
 mtext("A", side = 3, line = -3, outer = TRUE, adj = 0, cex=3)
 mtext("B", side=3,at=0.5, line=-3, outer=TRUE, adj=0, cex=3)
 
-# dev.copy2pdf(file = "../plots/titration.pdf", width = 24, height = 8)
-# dev.off()
+dev.copy2pdf(file = "../plots/titration.pdf", width = 24, height = 8)
+dev.off()
 
 cat("Molar concentartions\n")
 cat(paste("Continuous: ", c1, "mol/L\n"))
