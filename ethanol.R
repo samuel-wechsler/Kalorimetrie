@@ -8,7 +8,8 @@ source("../functions.R")
 # parse results from calibration
 source("../calibration.R")
 
-dewar.C <- dewar.C + 20
+# uncomment the below line to obtain the alternate analysis which was discussed
+# dewar.C <- dewar.C + 20
 
 # parse data
 data20 <- parseData("heatcapacity_20.dat")
