@@ -11,7 +11,7 @@ calib_data_2 <- parseData("calibration_2_samuel_wechsler.dat")
 calib_data_3 <- parseData("calibration_3_samuel_wechsler.dat")
 
 # # plot data to find temperature differences
-a <- 0.7
+a <- 0.5
 par(mfrow=c(1,3), mai = c(1, a, 1, a)) 
 
 
@@ -36,7 +36,15 @@ system.C <- U * I / dewar.slope.mean
 water.C <- water.m * water.c.sp
 dewar.C <- system.C - water.C
 
+error_prop_dewarC <- function(U, I, m, a, sa) {
+  return (U * I / a**2 * sa)
+}
+dewar.se <- error_prop_dewarC(U, I, water.m, dewar.slope.mean, dewar.slope.se)
+dewar.CI <- qt(0.975, df=2) * dewar.se
 
+print(dewar.se)
+print(dewar.C)
+print(dewar.CI)
 
 # Save the plot to a PDF file
 dev.copy2pdf(file = "../plots/calibration.pdf", width = 24, height = 8)

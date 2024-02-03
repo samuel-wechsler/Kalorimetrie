@@ -156,8 +156,9 @@ plotTemp <- function(Zeit, Temperatur, t1, t2, ylims) {
 # function used to plot temperature-time date of solvation enthalpy data
 # see solving.R
 plotTempSolv <- function(Zeit, Temperatur, idx, t) {
-
+  par(cex.lab = 2.0, cex.axis = 2)
   plot(Zeit, Temperatur, type = "l", lwd = 2, col = "gray",
+       ylim = c(19, 21.7),
        xlab = expression(italic(t) * " / " * s),
        ylab = expression(theta * " / " * degree * C)
   )
@@ -196,8 +197,9 @@ plotTempSolv <- function(Zeit, Temperatur, idx, t) {
   arrows(x0 = (t3 + t4) / 2, y0 = T3, x1 = (t3 + t4) / 2, y1 = T4, angle = 30, length = 0.1, lwd = 2, code = 2, col = "black")
   
   # Annotate arrows
-  text(x = (t1 + t2) / 2 + 70, y = (T1 + T2) / 2, labels = bquote(Delta * italic(T) == .(round(T4 - T3, 3)) * italic(K)))
-  text(x = (t3 + t4) / 2 + 55, y = (T3 + T4) / 2, labels = bquote(Delta * italic(T) == .(round(T4 - T3, 3)) * italic(K)))
+  text(x = (t1 + t2) / 2 + 70, y = (T1 + T2) / 2, labels = bquote(Delta * italic(T[S]) == .(round(T2 - T1, 3)) * italic(K)), cex=3)
+  text(x = (t3 + t4) / 2 - 70, y = (T3 + T4) / 2, labels = bquote(Delta * italic(T[C]) == .(round(T4 - T3, 3)) * italic(K)), cex=3)
+  
   
   return(list(deltaTsolv = (T2 - T1), deltaTC = (T4 - T3), Tcalib = Tcalib))
 }
@@ -228,6 +230,19 @@ specificHeatCapacity <- function(slope, C.dewar, mass) {
   return ((Cp - C.dewar) / mass)
 }
 
+# Function to calculate the standard error of the specific heat capcity
+# using gaussian error propagation.
+# See appendix for a derivation of the formula used.
+error_prop_specificHeatCapacity <- function(U, I, m, slope_a, slope_b) {
+  a <- slope_a$slope
+  sa <- slope_a$slope_se
+  b <- slope_b$slope
+  sb <- slope_b$slope_se
+  
+  # See section in appendix for derivation of below formula
+  return (U * I / m * sqrt(1/a**4 * sa**2 + 1/b**4 * sb**2))
+}
+
 
 # Function to calculate mass percentage given mass measurements of liquid
 mass_percentage <- function(m) {
@@ -241,9 +256,9 @@ solvEnthalpy <- function(Mb, mb, deltaT) {
 # ------------------
 
 # ------------------
-get_intersection <- function(quadmodel, linmodel) {
+get_intersection <- function(quadmodel, linmodel, rate) {
   # Generate a sequence of volume values
-  V.c <- seq(from = 50, to = 200, by = 0.1)
+  V.c <- seq(from = 50, to = 400, by = 0.1)
   
   # Predictions for the linear model
   th1 <- predict(linmodel, newdata = list(x1 = V.c), interval = "confidence")
@@ -260,13 +275,11 @@ get_intersection <- function(quadmodel, linmodel) {
   
   # Draw a dashed vertical line at the intersection point
   abline(v = Vx, lty = 2)
-  abline(v = Vx1, lty=2)
-  abline(v = Vx2, lty=2)
+  abline(v = Vx, lty=2)
+  abline(v = Vx, lty=2)
   
   # Calculate and display the result
-  result <- Vx * 4 / 18
-  text(x = Vx + 50, y = 20.25, label = substitute(Delta * V == value, list(value = result)))
-  
+  result <- Vx * rate
   return(list(Vx = Vx, Vx1 = Vx1, Vx2 = Vx2))
 }
 # ------------------
@@ -280,27 +293,26 @@ findEquivPoint <- function(Zeit, Temperatur) {
 # ------------------
 
 # ------------------
-timeToVolume <- function(time, rate) {
-  return (time / rate)
+timeToVolume <- function(time, rate, t_start) {
+  return ((time - t_start) * rate)
 }
 # ------------------
 
 #--------------------------
-plotContTitration <- function(data, t) {
+plotContTitration <- function(data, t, t_0) {
   Zeit <- data$zeit
   Temperatur <- data$temp
-  
-  par(mfrow=c(1,1))
+  par(cex.lab = 2.0, cex.axis = 2)
   plot(Zeit, Temperatur, type="l", lwd=2, col="grey65",
-       xlab=expression("Zeit"~~italic(t)~"/"~s),
-       ylab=expression("Temperatur"~~theta~"/"~degree*"C")
+       xlab=expression(italic(t)~"/"~s),
+       ylab=expression(theta~"/"~degree*"C")
   )
   
   # Add second x-axis
-  top_labels <- c(0, 10, 20, 30, 40, 50)
-  top_pos <- top_labels * 18 / 4
+  top_labels <- c(0, 10, 20, 30, 40)
+  top_pos <- (top_labels) * 18 / 4 + t_0
   axis(side = 3, at = top_pos, labels = top_labels)
-  mtext(expression(Delta * "V / mL"), side = 3, line = 2.5)
+  mtext(expression(Delta * "V / mL"), side = 3, line = 2.5, cex=2)
   
   t1 <- t[1]
   t2 <- t[2]
@@ -309,8 +321,6 @@ plotContTitration <- function(data, t) {
   
   idx2 <- which(Zeit > t1 & Zeit < t2)
   idx1 <- which(Zeit > t3 & Zeit < t4)
-  
-  print(idx1)
   
   # Create models
   x1 <- Zeit[idx1]
@@ -330,46 +340,75 @@ plotContTitration <- function(data, t) {
   matlines(x2, predict(quadmodel, list(x2 = x2), interval="confidence"), col = "black", lwd=c(2,1,1))
   
   # calculate intersection to obtain equivalent volume of titer
-  deltat <- get_intersection(quadmodel, linmodel)
-  deltaV <- timeToVolume(deltat$Vx, 4/18)
+  deltat <- get_intersection(quadmodel, linmodel, 4/18)
+  deltaV <- timeToVolume(deltat$Vx, 4/18, t_0)
+  text(x = deltaV + 180, y = 21, label = substitute(Delta * V == value *mL, list(value = round(deltaV, 3))), cex=2.5)
   
-  return (deltat)
+  return (deltaV)
 }
 # ------------------
 
 # ------------------
-plotDiscTitration <- function(data, t) {
+plotDiscTitration <- function(data, t, t_0) {
   # Extracting time and temperature from the data
   Zeit <- data$zeit
   Temperatur <- data$temp
   
+  par(cex.lab = 2.0, cex.axis = 2)
   # Plot temperature line
-  par(mfrow = c(1, 1))
   plot(Zeit, Temperatur, type = "l", lwd = 2, col = "black",
        xlim = c(), ylim = c(),
-       xlab = expression("Zeit" ~ italic(t) ~ "/" ~ s),
-       ylab = expression("Temperatur" ~ theta ~ "/" ~ degree * "C"))
+       xlab = expression(italic(t) ~ "/" ~ s),
+       ylab = expression(theta ~ "/" ~ degree * "C"))
   
   # Plot selected points
   n <- 16
   Zeit.P <- 69.0 + seq(0, n) * 20.0
   Temp.P <- approx(Zeit, Temperatur, Zeit.P)$y
-  points(Zeit.P, Temp.P, pch = 21, bg = "white")
+  points(Zeit.P, Temp.P, pch = 21, bg = "white", cex=1.5)
   
+  idx2 <- which(Zeit.P > 0 & Zeit.P < 280)
+  idx1 <- which(Zeit.P > 300 & Zeit.P < 400)
+  
+  # Create models
+  x1 <- Zeit.P[idx1]
+  y1 <- Temp.P[idx1]
+  linmodel <- lm(y1 ~ I(x1))
+  
+  x2 <- Zeit.P[idx2]
+  y2 <- Temp.P[idx2]
+  quadmodel <- lm(y2 ~ I(x2) + I(x2^2))
+  
+  # Plot the first model
+  x1 <- Zeit.P[(idx1[1]-3):(idx1[length(idx1)])]
+  x2 <- Zeit.P[(idx2[1]):(idx2[length(idx2)]+1)]
+  
+  # plot model curves and confidence intervall
+  lines(x1, predict(linmodel, list(x1 = x1)), col = "black", lwd=c(2,1,1))
+  lines(x2, predict(quadmodel, list(x2 = x2)), col = "black", lwd=c(2,1,1))
+  
+
   # Add top labels and axis
   top_labels <- seq(0, 100, 10)
-  top_pos <- top_labels * 18 / 4
+  top_pos <- (top_labels) * 20 / 2 + t_0
   axis(side = 3, at = top_pos, labels = top_labels)
-  mtext(expression(Delta * "V / mL"), side = 3, line = 2.5)
+  mtext(expression(Delta * "V / mL"), side = 3, line = 2.5, cex=2)
   
   # Find equivalence point
-  t_eq <- approx(Zeit, Temperatur, t)$x
+  t_eq <- get_intersection(quadmodel, linmodel, 2/10)
   
   # Calculate volume change at equivalence point
-  deltaV <- timeToVolume(t_eq, 18 / 4)
+  deltaV <- timeToVolume(t_eq$Vx, 2/20, t_0)
   
   # Draw line at equivalence point and add text
-  abline(v = t_eq, lty = 2)
-  text(x = t_eq + 50, y = 21.25, label = substitute(Delta * V == value * mL, list(value = round(deltaV, 3))))
+  text(x = t_eq$Vx + 75, y = 21.25, label = substitute(Delta * V == value * mL, list(value = round(deltaV, 3))), cex=2.5)
+  
+  return (deltaV)
 }
+# ------------------
+
+# ------------------
+titration_concentration <- function(V_eq, c_tit, V_init)
+  return ((V_eq * c_tit) / V_init)
+
 # ------------------

@@ -9,13 +9,19 @@ solve1 <- parseData("solving_enthalpy_1_samuel_wechsler.dat")
 solve2 <- parseData("solving_enthalpy_2_samuel_wechsler.dat")
 solve3 <- parseData("solving_enthalpy_3_samuel_wechsler.dat")
 
+
+
 # plot data and determine temperature differences
-a <- 0.7
-par(mfrow=c(1,3), mai = c(1, a, 1, a)) 
-deltaT1 <- plotTempSolv(solve1$zeit, solve1$temp, c(50, 100, 200, 310), c(220, 292))
+a <- 0.8
+par(mfrow=c(1,3), mai = c(1, a, 1, a))
+deltaT1 <- plotTempSolv(solve1$zeit, solve1$temp, c(50, 100, 200, 307), c(220, 292))
 deltaT2 <- plotTempSolv(solve2$zeit, solve2$temp, c(50, 100, 230, 340), c(248, 328))
-deltaT3 <- plotTempSolv(solve3$zeit, solve3$temp, c(50, 100, 220, 330), c(248, 310))
+deltaT3 <- plotTempSolv(solve3$zeit, solve3$temp, c(50, 105, 220, 322), c(248, 310))
 deltaT <- c(deltaT1, deltaT2, deltaT3)
+dev.copy2pdf(file = "../plots/solving.pdf", width = 24, height = 8)
+dev.off()
+
+print(deltaT3)
 
 # mass of NH4NO3
 M <- 80.04
@@ -29,7 +35,8 @@ Hsolv2 <- solvEnthalpy(M, m2, deltaT2)
 Hsolv3 <- solvEnthalpy(M, m3, deltaT3)
 
 # measure duration of calibration
-Hsolv <- c(Hsolv1, Hsolv2, Hsolv3) / 1000
+Hsolv <- c(Hsolv1, Hsolv2 , Hsolv3) / 1000
+Hsolv <- c(Hsolv1, Hsolv2) / 1000
 Hsolv.mw <- mean(Hsolv)
 Hsolv.sd <- sd(Hsolv)
 Hsolv.se <- Hsolv.sd / sqrt(2)
